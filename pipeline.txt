@@ -1,35 +1,39 @@
-pipeline{
-    agent {label "vinod"}
-    
-    stages{
-        
-        stage("In this we are clonning the code"){
-            steps{
-                echo "This is clonning the code"
+pipeline {
+    agent { label "vinod" }
+
+    stages {
+        stage("Clone the code") {
+            steps {
+                echo "Cloning the code from GitHub"
                 git url: "https://github.com/techh-pratik/django-notes-app.git", branch: "main"
             }
         }
-        stage("In this we are building the code"){
-            steps{
-                echo "This is Building the code"
+
+        stage("Build the Docker image") {
+            steps {
+                echo "Building the Docker image"
                 sh "docker build -t notes-app ."
             }
         }
-        stage("In this we are Pushing the code"){
-            steps{
-                echo "This is Pushing the code"
+
+        stage("Push the image to DockerHub") {
+            steps {
+                echo "Pushing the Docker image to DockerHub"
                 withCredentials([usernamePassword(
-                    credentialsId:"DockerHubCred",
-                    usernameVariable:"dockerHubUser", 
-                    passwordVariable:"dockerHubPass")]){
-                sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
-                sh "docker image tag notes-app ${env.dockerHubUser}/notes-app"
-                sh "docker ${env.dockerHubUser}/push notes-app"
+                    credentialsId: "DockerHubCred",
+                    usernameVariable: "dockerHubUser", 
+                    passwordVariable: "dockerHubPass"
+                )]) {
+                    sh "docker login -u $dockerHubUser -p $dockerHubPass"
+                    sh "docker tag notes-app $dockerHubUser/notes-app"
+                    sh "docker push $dockerHubUser/notes-app"
+                }
             }
         }
-        stage("In this we are Deploying the code"){
-            steps{
-                echo "This is Deploying the code"
+
+        stage("Deploy the container") {
+            steps {
+                echo "Deploying using Docker Compose"
                 sh "docker compose up -d"
             }
         }
